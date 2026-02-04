@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>System Diagnostics | Secure Access</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;500;700&display=swap');
+
+        :root {
+            --accent-primary: #00d1ff;
+            --accent-danger: #ff4b4b;
+            --accent-success: #00ff95;
+            --bg-base: #0a0a0c;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-base);
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', monospace;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 1;
+            opacity: 0.15;
+        }
+
+        .professional-box {
+            border: 1px solid var(--glass-border);
+            padding: 40px 30px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border-radius: 4px;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            letter-spacing: 2px; 
+            margin-bottom: 20px; 
+            text-transform: uppercase;
+        }
+
+        .text-danger { color: var(--accent-danger); }
+        .text-muted { color: #888; font-size: 0.85rem; font-weight: 300; }
+        p { font-size: 0.9rem; line-height: 1.6; }
+
+        .btn-group {
+            margin-top: 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* --- ADVANCED BUTTON ANIMATIONS --- */
+        button {
+            width: 100%;
+            max-width: 280px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Shimmer Effect */
+        button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: 0.5s;
+            display: block;
+        }
+
+        button:hover::after {
+            left: 100%;
+            top: 100%;
+        }
+
+        #fixBtn { 
+            border-color: var(--accent-danger); 
+            background: rgba(255, 75, 75, 0.05);
+            color: var(--accent-danger);
+            animation: pulse-danger 2s infinite;
+        }
+
+        #acceptBtn {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: rgba(0, 209, 255, 0.05);
+            animation: pulse-primary 2s infinite;
+            z-index: 1002;
+        }
+
+        #declineBtn { 
+            color: #555; 
+            border-color: #222; 
+            position: relative; 
+            font-weight: 300; 
+        }
+
+        /* Button Hover/Active States */
+        button:active {
+            transform: scale(0.95);
+            filter: brightness(1.2);
+        }
+
+        @keyframes pulse-primary {
+            0% { box-shadow: 0 0 0 0 rgba(0, 209, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 209, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 209, 255, 0); }
+        }
+
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 75, 75, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
+        }
+
+        /* Decline Button Shake on move */
+        .shake {
+            animation: shake 0.2s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Success UI */
+        #successScreen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-base);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .heart-icon {
+            font-size: 50px;
+            margin-bottom: 25px;
+            color: var(--accent-danger);
+            filter: drop-shadow(0 0 20px rgba(255, 75, 75, 0.4));
+            animation: softPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes softPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.8; }
+        }
+
+        .commit-log {
+            font-size: 0.75rem;
+            color: #444;
+            margin-top: 40px;
+            border-top: 1px solid #111;
+            padding-top: 20px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="virusScreen">
+        <div class="professional-box">
+            <h1 class="text-danger">Diagnostic Warning</h1>
+            <p>System detected an anomaly in the <b>Core_Emotional_Module</b>.</p>
+            <p class="text-muted">Target: Valentine_Protocol_2026<br>Status: Awaiting Response</p>
+            <div class="btn-group">
+                <button id="fixBtn" onclick="repairSystem()">Initialize Repair</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainContainer" class="professional-box" style="display: none;">
+        <h1 style="color: var(--accent-primary)">Analysis Complete</h1>
+        <p>The anomaly is a persistent <b>Missing_Valentine</b> dependency.</p>
+        <p class="text-muted">Would you like to resolve this by merging our schedules?</p>
+        
+        <div class="btn-group">
+            <button id="acceptBtn" onclick="showSuccess()">Accept Merge</button>
+            <button id="declineBtn" onmouseover="moveButton()" ontouchstart="moveButton()">Ignore</button>
+        </div>
+    </div>
+
+    <div id="successScreen">
+        <div class="heart-icon">🌹</div>
+        <h1 style="color: var(--accent-success); margin-bottom: 10px;">Build Successful</h1>
+        <p style="color: #888;">Protocol: Valentine's Day Engagement</p>
+        <h2 style="color: #fff; margin-top: 15px; font-weight: 500;">I love you kaayo jud pirme langlang</h2>
+        
+        <div class="commit-log">
+            <p>> Uptime: 33 Months<br>> Status: Stable<br>> Ref: 02-14-2026</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const characters = "01";
+        const fontSize = 12;
+        let angle = 0;
+
+        function drawMatrixRose() {
+            ctx.fillStyle = "rgba(10, 10, 12, 0.15)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#1a1a1e";
+            ctx.font = fontSize + "px 'JetBrains Mono'";
+
+            for (let i = 0; i < 4; i++) {
+                angle += 0.05;
+                let k = 5;
+                let r = Math.cos(k * angle) * (Math.min(canvas.width, canvas.height) / 3);
+                let x = canvas.width / 2 + r * Math.cos(angle);
+                let y = canvas.height / 2 + r * Math.sin(angle);
+                ctx.fillText(characters.charAt(Math.floor(Math.random() * characters.length)), x, y);
+            }
+        }
+        setInterval(drawMatrixRose, 50);
+
+        function repairSystem() {
+            const btn = document.getElementById('fixBtn');
+            btn.innerHTML = "Processing...";
+            btn.style.animation = "none";
+            
+            setTimeout(() => {
+                document.getElementById('virusScreen').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+            }, 1200);
+        }
+
+        let scale = 1;
+        function moveButton() {
+            const declineBtn = document.getElementById('declineBtn');
+            const acceptBtn = document.getElementById('acceptBtn');
+            
+            // Interaction logic
+            scale += 0.35;
+            acceptBtn.style.transform = `scale(${scale})`;
+            
+            // Animation logic
+            declineBtn.classList.add('shake');
+            setTimeout(() => declineBtn.classList.remove('shake'), 200);
+
+            const x = Math.random() * (window.innerWidth - 120);
+            const y = Math.random() * (window.innerHeight - 80);
+            declineBtn.style.position = 'fixed';
+            declineBtn.style.left = x + 'px';
+            declineBtn.style.top = y + 'px';
+            declineBtn.style.zIndex = "1001";
+        }
+
+        function showSuccess() {
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById('successScreen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
